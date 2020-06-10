@@ -10,7 +10,7 @@ from datetime import timedelta
 
 class GroundStationScheduleDirectory:
     # Caches as much as possible to speed it up... but then does not reread directories, files, etc.
-    def __init__(self, dir_name="C:\Users\msuder\Google Drive\STF1\WFF-Schedule"):
+    def __init__(self, dir_name="C:/Users/msuder/Google Drive/STF1/WFF-Schedule"):
         self.__dir_name = dir_name
         self.__files = None
         self.__latest_files = None

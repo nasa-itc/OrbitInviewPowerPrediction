@@ -23,9 +23,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--satnum", help="Specify satellite number (e.g. 25544=ISS, 43852=STF-1)", \
             type=int, metavar="[1-99999]", choices=range(1,99999), default=43852)
-    parser.add_argument("-t", "--time", help="Specify date/time (UTC)", type=ArgValidator.validate_datetime, metavar="YYYY-MM-DDTHH:MM:SS.s", default=datetime.now())
+    parser.add_argument("-t", "--time", help="Specify date/time (UTC)", type=ArgValidator.validate_datetime, metavar="YYYY-MM-DDTHH:MM:SS", default=datetime.now())
     parser.add_argument("-r", "--endtime", help="Specify date time range with this end date/time (UTC)", \
-            type=ArgValidator.validate_datetime, metavar="YYYY-MM-DDTHH:MM:SS.s", default=None)
+            type=ArgValidator.validate_datetime, metavar="YYYY-MM-DDTHH:MM:SS", default=None)
     parser.add_argument("-d", "--timestep", help="Specify time step (delta) in seconds for tabular data", \
             type=int, metavar="[1-9999]", choices=range(1,3600), default=60)
     parser.add_argument("-p", "--tle", help="Print TLE information", action="store_true")
@@ -91,7 +91,7 @@ def main():
         gs = GroundStation(lat=args.latitude, lon=args.longitude, el_meters=args.elevation)
         ic = InviewCalculator(gs, st)
         if (args.endtime is None):
-	    args.endtime = args.time
+            args.endtime = args.time
         azels = ic.compute_azels(args.time, args.endtime, args.timestep)
         print_azelrange_table(azels)
 
@@ -104,20 +104,20 @@ def main():
                 in_sun = "in penumbra"
             else:
                 in_sun = "in umbra"
-            print "===== SUN ====="
-            print "Satellite is %s" % in_sun
+            print("===== SUN =====")
+            print("Satellite is %s" % in_sun)
         else:
             tables = st.compute_sun_times(args.time, args.endtime)
             print_sun_times_table(st, args.time, args.endtime, tables)
 
 def print_tle_data(st):
-    print "===== TLE ====="
-    print "Column Headers:"
-    print st
-    print "Raw:"
-    print st.raw_string()
-    print "Pretty:"
-    print st.pretty_string()
+    print("===== TLE =====")
+    print("Column Headers:")
+    print(st)
+    print("Raw:")
+    print(st.raw_string())
+    print("Pretty:")
+    print(st.pretty_string())
 
 def print_ephemeris_point(st, point, inertial=True):
     #print point
@@ -125,52 +125,52 @@ def print_ephemeris_point(st, point, inertial=True):
         coords = "ECI"
     else:
         coords = "ECEF"
-    print "===== %s =====" % coords
+    print("===== %s =====" % coords)
 
     if (not inertial):
         gmst_radians = astronomy.gmst(point[0])
-    print "Date/Time: %s  Satellite Number: %s" % \
-          (point[0], st.get_satellite_number())
+    print("Date/Time: %s  Satellite Number: %s" % \
+          (point[0], st.get_satellite_number()))
     (x, y, z) = (point[1][0], point[1][1], point[1][2])
     if (not inertial):
         r = math.sqrt(x*x + y*y)
         x = r*math.cos(-1.0*gmst_radians)
         y = r*math.sin(-1.0*gmst_radians)
-    print "Position (km,   x/y/z %s): %s/%s/%s" % (coords, x, y, z)
+    print("Position (km,   x/y/z %s): %s/%s/%s" % (coords, x, y, z))
     (x, y, z) = (point[2][0], point[2][1], point[2][2])
     if (not inertial):
         r = math.sqrt(x*x + y*y)
         x = r*math.cos(-1.0*gmst_radians)
         y = r*math.sin(-1.0*gmst_radians)
-    print "Velocity (km/s, x/y/z %s): %s/%s/%s" % (coords, x, y, z)
+    print("Velocity (km/s, x/y/z %s): %s/%s/%s" % (coords, x, y, z))
 
 def print_lonlatalt(st, llap):
-    print "===== LLA ====="
-    print "Date/Time: %s  Satellite Number: %s" % \
-          (llap[0], st.get_satellite_number())
-    print "Position (lat/lon/alt in geodetic degrees and km above WGS-84 ellipsoid): %s/%s/%s" % \
-          (llap[2], llap[1], llap[3])
+    print("===== LLA =====")
+    print("Date/Time: %s  Satellite Number: %s" % \
+          (llap[0], st.get_satellite_number()))
+    print("Position (lat/lon/alt in geodetic degrees and km above WGS-84 ellipsoid): %s/%s/%s" % \
+          (llap[2], llap[1], llap[3]))
 
 KM_TO_FEET=3280.84
 def print_mag(st, llap):
-    print "===== MAG ====="
-    print "Date/Time: %s  Satellite Number: %s" % \
-          (llap[0], st.get_satellite_number())
+    print("===== MAG =====")
+    print("Date/Time: %s  Satellite Number: %s" % \
+          (llap[0], st.get_satellite_number()))
     d = datetime.date(llap[0])
     gm = geomag.geomag.GeoMag()
     mag = gm.GeoMag(llap[2], llap[1], llap[3]*KM_TO_FEET, d)
     aacgm = aacgmv2.get_aacgm_coord(llap[2], llap[1], llap[3], llap[0])
-    print "Geodetic Latitude (degrees)/Geodetic Longitude (degrees)/Altitude (km above WGS-84 ellipsoid)/Declination (degrees)/Inclination (degrees)/Total Intensity (nT)/Horizontal (nT)/North (nT)/East (nT)/Vertical (nT)/Magnetic Latitude (degrees)/Magnetic Longitude(degrees)/Magnetic Local Time (hours):  %s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s" % \
-    	(llap[2], llap[1], llap[3], mag.dec, mag.dip, mag.ti, mag.bh, mag.bx, mag.by, mag.bz, aacgm[0], aacgm[1], aacgm[2])
+    print("Geodetic Latitude (degrees)/Geodetic Longitude (degrees)/Altitude (km above WGS-84 ellipsoid)/Declination (degrees)/Inclination (degrees)/Total Intensity (nT)/Horizontal (nT)/North (nT)/East (nT)/Vertical (nT)/Magnetic Latitude (degrees)/Magnetic Longitude(degrees)/Magnetic Local Time (hours):  %s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s" % \
+    	(llap[2], llap[1], llap[3], mag.dec, mag.dip, mag.ti, mag.bh, mag.bx, mag.by, mag.bz, aacgm[0], aacgm[1], aacgm[2]))
 
 def print_ephemeris_table(st, table, inertial=True):
     if (inertial):
         coords = "ECI"
     else:
         coords = "ECEF"
-    print "===== %s =====" % coords
+    print("===== %s =====" % coords)
 
-    print "Time, X,Y,Z in km, VX,VY,VZ in km/s (%s Coordinates)" % coords
+    print("Time, X,Y,Z in km, VX,VY,VZ in km/s (%s Coordinates)" % coords)
     for i in range(0, len(table)):
         ( x,  y,  z) = (table[i][1][0], table[i][1][1], table[i][1][2])
         (vx, vy, vz) = (table[i][2][0], table[i][2][1], table[i][2][2])
@@ -182,58 +182,58 @@ def print_ephemeris_table(st, table, inertial=True):
             vr = math.sqrt(vx*vx + vy*vy)
             vx = r*math.cos(-1.0*gmst_radians)
             vy = r*math.sin(-1.0*gmst_radians)
-        print "%s, %16.8f,%16.8f,%16.8f, %13.9f,%13.9f,%13.9f" % \
-              (table[i][0], x, y, z, vx, vy, vz)
+        print("%s, %16.8f,%16.8f,%16.8f, %13.9f,%13.9f,%13.9f" % \
+              (table[i][0], x, y, z, vx, vy, vz))
 
 def print_azelrange_table(table):
-    print "===== AER ====="
-    print "Time, azimuth (degrees), elevation (degrees), range (km)"
+    print("===== AER =====")
+    print("Time, azimuth (degrees), elevation (degrees), range (km)")
     for i in range(0, len(table)):
-        print "%s, %6.2f,%8.2f,%9.2f" % \
-              (table[i][0], table[i][2], table[i][1], table[i][3]) 
+        print("%s, %6.2f,%8.2f,%9.2f" % \
+              (table[i][0], table[i][1], table[i][2], table[i][3]))
 
 def print_lonlatalt_table(st, table):
-    print "===== LLA ====="
-    print "Time, lat,lon,alt (geodetic degrees, km above WGS-84 ellipsoid)"
+    print("===== LLA =====")
+    print("Time, lat,lon,alt (geodetic degrees, km above WGS-84 ellipsoid)")
     for i in range(0, len(table)):
-        print "%s, %6.2f,%8.2f,%9.2f" % \
-              (table[i][0], table[i][2], table[i][1], table[i][3]) 
+        print("%s, %6.2f,%8.2f,%9.2f" % \
+              (table[i][0], table[i][2], table[i][1], table[i][3])) 
 
 def print_mag_table(st, table):
     gm = geomag.geomag.GeoMag()
-    print "===== MAG ====="
-    print "Time (UTC), geodetic latitude (degrees), geodetic longitude (degrees), alt (km above WGS-84 ellipsoid), magnetic declination (degrees), inclination (degrees), total intensity (nT), horizontal (nT), north (nT), east (nT), vertical (nT), magnetic latitude (degrees), magnetic longitude (degrees), magnetic local time (hours)"
+    print("===== MAG =====")
+    print("Time (UTC), geodetic latitude (degrees), geodetic longitude (degrees), alt (km above WGS-84 ellipsoid), magnetic declination (degrees), inclination (degrees), total intensity (nT), horizontal (nT), north (nT), east (nT), vertical (nT), magnetic latitude (degrees), magnetic longitude (degrees), magnetic local time (hours)")
     for i in range(0, len(table)):
         mag = gm.GeoMag(table[i][2], table[i][1], table[i][3]*KM_TO_FEET, datetime.date(table[i][0]))
         aacgm = aacgmv2.get_aacgm_coord(table[i][2], table[i][1], table[i][3], table[i][0])
-        print "%s, %6.2f, %8.2f, %9.2f, %6.2f, %8.2f, %7.1f, %7.1f, %7.1f, %7.1f, %7.1f, %6.2f, %8.2f, %5.2f" % \
-            (table[i][0], table[i][2], table[i][1], table[i][3], mag.dec, mag.dip, mag.ti, mag.bh, mag.bx, mag.by, mag.bz, aacgm[0], aacgm[1], aacgm[2])
+        print("%s, %6.2f, %8.2f, %9.2f, %6.2f, %8.2f, %7.1f, %7.1f, %7.1f, %7.1f, %7.1f, %6.2f, %8.2f, %5.2f" % \
+            (table[i][0], table[i][2], table[i][1], table[i][3], mag.dec, mag.dip, mag.ti, mag.bh, mag.bx, mag.by, mag.bz, aacgm[0], aacgm[1], aacgm[2]))
 
 def print_sun_times_table(st, start, end, tables):
-    print "===== SUN ====="
+    print("===== SUN =====")
     table = tables[0]
-    print "In sun times from %s to %s" % (start, end)
-    print "        Enter Sun                Exit Sun           (Len )"
+    print("In sun times from %s to %s" % (start, end))
+    print("        Enter Sun                Exit Sun           (Len )")
     for i in range(0, len(table)):
         delta = table[i][1] - table[i][0]
-        print "%s %s (%s)" % (table[i][0].isoformat(), table[i][1].isoformat(), \
-                              delta.seconds)
+        print("%s %s (%s)" % (table[i][0].isoformat(), table[i][1].isoformat(), \
+                              delta.seconds))
     table = tables[1]
-    print ""
-    print "In penumbra times from %s to %s" % (start, end)
-    print "        Enter Penumbra           Exit Penumbra       (Len )"
+    print("")
+    print("In penumbra times from %s to %s" % (start, end))
+    print("        Enter Penumbra           Exit Penumbra       (Len )")
     for i in range(0, len(table)):
         delta = table[i][1] - table[i][0]
-        print "%s %s (%s)" % (table[i][0].isoformat(), table[i][1].isoformat(), \
-                              delta.seconds)
+        print("%s %s (%s)" % (table[i][0].isoformat(), table[i][1].isoformat(), \
+                              delta.seconds))
     table = tables[2]
-    print ""
-    print "In umbra times from %s to %s" % (start, end)
-    print "        Enter Umbra              Exit Umbra         (Len )"
+    print("")
+    print("In umbra times from %s to %s" % (start, end))
+    print("        Enter Umbra              Exit Umbra         (Len )")
     for i in range(0, len(table)):
         delta = table[i][1] - table[i][0]
-        print "%s %s (%s)" % (table[i][0].isoformat(), table[i][1].isoformat(), \
-                              delta.seconds)
+        print("%s %s (%s)" % (table[i][0].isoformat(), table[i][1].isoformat(), \
+                              delta.seconds))
 
 # Python idiom to eliminate the need for forward declarations
 if __name__=="__main__":

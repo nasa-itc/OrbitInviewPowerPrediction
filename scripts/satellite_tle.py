@@ -1,4 +1,4 @@
-from urllib import urlopen
+import requests
 from fileinput import input
 from pyorbital.orbital import Orbital
 from pytz import UTC
@@ -317,9 +317,9 @@ class SatelliteTle:
             lines = input(self.__tle_file)
         else:
             try:
-                lines = urlopen(self.__tle_url)
+                lines = requests.get(self.__tle_url).text.splitlines() 
             except:
-                default_file = "C:\Users\msuder\Desktop\cubesat.txt"
+                default_file = "C:/Users/msuder/Desktop/cubesat.txt"
                 lines = input(default_file)
 
         last_name = ""

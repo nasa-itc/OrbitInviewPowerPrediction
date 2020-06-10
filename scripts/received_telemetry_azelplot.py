@@ -100,7 +100,7 @@ def process_telem_file(filename, tzone, satnum, gs, data, satdata, telemdata):
   tle_dir = data.get('tle_dir', "")
   lyear = lmonth = lday = 0
 
-  timeline = re.compile("STF1_TLM\t\w+\t(\d{4})/(\d{2})/(\d{2}) (\d{2}):(\d{2}):(\d{2})(.*)")
+  timeline = re.compile("STF1_TLM,\w+,(\d{4})/(\d{2})/(\d{2}) (\d{2}):(\d{2}):(\d{2})(.*)")
   azels = []
   with open(filename, "r") as f:
     for line in f:
