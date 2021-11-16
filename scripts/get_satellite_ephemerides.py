@@ -42,6 +42,7 @@ def main():
             type=float, default=38.43685028)
     parser.add_argument("-z", "--elevation", help="Specify elevation (meters) of ground station", \
             type=float, default=842.0)
+    parser.add_argument("-v", "--iirv", help="Print improved interrange vector (IIRV) format", action="store_true")
     args = parser.parse_args()
 
     if (args.file is not None):
@@ -109,6 +110,14 @@ def main():
         else:
             tables = st.compute_sun_times(args.time, args.endtime)
             print_sun_times_table(st, args.time, args.endtime, tables)
+            
+    if (args.iirv):
+        if (args.endtime is None):
+            point = st.compute_ephemeris_point(args.time)
+            print_iirv_point(st, point)
+        else:
+            table = st.compute_ephemeris_table(args.time, args.endtime, args.timestep)
+            print_iirv_points(st, table)
 
 def print_tle_data(st):
     print("===== TLE =====")
@@ -162,6 +171,50 @@ def print_mag(st, llap):
     aacgm = aacgmv2.get_aacgm_coord(llap[2], llap[1], llap[3], llap[0])
     print("Geodetic Latitude (degrees)/Geodetic Longitude (degrees)/Altitude (km above WGS-84 ellipsoid)/Declination (degrees)/Inclination (degrees)/Total Intensity (nT)/Horizontal (nT)/North (nT)/East (nT)/Vertical (nT)/Magnetic Latitude (degrees)/Magnetic Longitude(degrees)/Magnetic Local Time (hours):  %s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s" % \
     	(llap[2], llap[1], llap[3], mag.dec, mag.dip, mag.ti, mag.bh, mag.bx, mag.by, mag.bz, aacgm[0], aacgm[1], aacgm[2]))
+
+def print_iirv_point(st, point):
+    print("GIIRV MANY\r\r\n")
+    tt = point[0].timetuple()
+    string = "1211800001000%3.3d%2.2d%2.2d%2.2d%3.3d" % (tt.tm_yday, tt.tm_hour, tt.tm_min, tt.tm_sec, int(point[0].microsecond/1000.0))
+    csum = checksum(string)
+    print("%s%3.3d\r\r\n" % (string, csum))
+    gmst_radians = astronomy.gmst(point[0])
+    #print("gmst_radians=%s, degrees=%s" % (gmst_radians, gmst_radians * 180.0/3.1415927))
+    (x, y, z) = (point[1][0], point[1][1], point[1][2])
+    r = math.sqrt(x*x + y*y)
+    theta = math.atan2(y, x)
+    x = r*math.cos(-1.0*gmst_radians+theta)
+    y = r*math.sin(-1.0*gmst_radians+theta)
+    string = "% 013.0f% 013.0f% 013.0f" % (x*1000.0, y*1000.0, z*1000.0)
+    csum = checksum(string)
+    print("%s%3.3d\r\r\n" % (string, csum))
+    (x, y, z) = (point[2][0], point[2][1], point[2][2])
+    r = math.sqrt(x*x + y*y)
+    theta = math.atan2(y, x)
+    x = r*math.cos(-1.0*gmst_radians+theta)
+    y = r*math.sin(-1.0*gmst_radians+theta)
+    string = "% 013.0f% 013.0f% 013.0f" % (x*1000000.0, y*1000000.0, z*1000000.0)
+    csum = checksum(string)
+    print("%s%3.3d\r\r\n" % (string, csum))
+    mass = 4475570
+    cross = 99999
+    drag = 207
+    solar = 0
+    string = "%08.0f%05.0f%04.0f% 08.0f" % (mass, cross, drag, solar)
+    csum = checksum(string)
+    print("%s%3.3d\r\r\n" % (string, csum))
+    print("ITERM GAQD\r\r\n")
+    
+def checksum(s):
+    csum = 0
+    for c in s:
+        if (c == ' '):
+            pass
+        elif (c == '-'):
+            csum = csum + 1
+        else:
+            csum = csum + int(c)
+    return csum
 
 def print_ephemeris_table(st, table, inertial=True):
     if (inertial):
