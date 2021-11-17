@@ -317,10 +317,10 @@ def print_iirv_points(st, table):
         string = "% 013.0f% 013.0f% 013.0f" % (x*1000000.0, y*1000000.0, z*1000000.0)
         csum = checksum(string)
         print("%s%3.3d\r\r\n" % (string, csum))
-        mass = 4475570
+        mass = 4544100
         cross = 99999
-        drag = 207
-        solar = 0
+        drag = 200
+        solar = 1500000
         string = "%08.0f%05.0f%04.0f% 08.0f" % (mass, cross, drag, solar)
         csum = checksum(string)
         print("%s%3.3d\r\r\n" % (string, csum))
