@@ -143,14 +143,16 @@ def print_ephemeris_point(st, point, inertial=True):
     (x, y, z) = (point[1][0], point[1][1], point[1][2])
     if (not inertial):
         r = math.sqrt(x*x + y*y)
-        x = r*math.cos(-1.0*gmst_radians)
-        y = r*math.sin(-1.0*gmst_radians)
+        theta = math.atan2(y, x)
+        x = r*math.cos(-1.0*gmst_radians+theta)
+        y = r*math.sin(-1.0*gmst_radians+theta)
     print("Position (km,   x/y/z %s): %s/%s/%s" % (coords, x, y, z))
     (x, y, z) = (point[2][0], point[2][1], point[2][2])
     if (not inertial):
         r = math.sqrt(x*x + y*y)
-        x = r*math.cos(-1.0*gmst_radians)
-        y = r*math.sin(-1.0*gmst_radians)
+        theta = math.atan2(y, x)
+        x = r*math.cos(-1.0*gmst_radians+theta)
+        y = r*math.sin(-1.0*gmst_radians+theta)
     print("Velocity (km/s, x/y/z %s): %s/%s/%s" % (coords, x, y, z))
 
 def print_lonlatalt(st, llap):
@@ -230,11 +232,13 @@ def print_ephemeris_table(st, table, inertial=True):
         if (not inertial):
             gmst_radians = astronomy.gmst(table[i][0])
             r = math.sqrt(x*x + y*y)
-            x = r*math.cos(-1.0*gmst_radians)
-            y = r*math.sin(-1.0*gmst_radians)
+            theta = math.atan2(y, x)
+            x = r*math.cos(-1.0*gmst_radians+theta)
+            y = r*math.sin(-1.0*gmst_radians+theta)
             vr = math.sqrt(vx*vx + vy*vy)
-            vx = r*math.cos(-1.0*gmst_radians)
-            vy = r*math.sin(-1.0*gmst_radians)
+            vtheta = math.atan2(vy, vx)
+            vx = vr*math.cos(-1.0*gmst_radians+vtheta)
+            vy = vr*math.sin(-1.0*gmst_radians+vtheta)
         print("%s, %16.8f,%16.8f,%16.8f, %13.9f,%13.9f,%13.9f" % \
               (table[i][0], x, y, z, vx, vy, vz))
 
