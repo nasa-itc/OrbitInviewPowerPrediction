@@ -27,7 +27,7 @@ def main():
     parser.add_argument("-r", "--endtime", help="Specify date time range with this end date/time (UTC)", \
             type=ArgValidator.validate_datetime, metavar="YYYY-MM-DDTHH:MM:SS", default=None)
     parser.add_argument("-d", "--timestep", help="Specify time step (delta) in seconds for tabular data", \
-            type=int, metavar="[1-9999]", choices=range(1,3600), default=60)
+            type=int, metavar="[1-86400]", choices=range(1,86400), default=60)
     parser.add_argument("-p", "--tle", help="Print TLE information", action="store_true")
     parser.add_argument("-u", "--sun", help="Print sun/umbra/penumbra information", action="store_true")
     parser.add_argument("-e", "--ecef", help="Print ECEF ephemeris", action="store_true")
@@ -291,6 +291,42 @@ def print_sun_times_table(st, start, end, tables):
         delta = table[i][1] - table[i][0]
         print("%s %s (%s)" % (table[i][0].isoformat(), table[i][1].isoformat(), \
                               delta.seconds))
+
+def print_iirv_points(st, table):
+    for i in range(0, len(table)):
+        print("GIIRV MANY\r\r\n")
+        tt = table[i][0].timetuple()
+        string = "1111800001%3.3d%3.3d%2.2d%2.2d%2.2d%3.3d" % (i+1, tt.tm_yday, tt.tm_hour, tt.tm_min, tt.tm_sec, int(table[i][0].microsecond/1000.0))
+        csum = checksum(string)
+        print("%s%3.3d\r\r\n" % (string, csum))
+        gmst_radians = astronomy.gmst(table[i][0])
+        #print("gmst_radians=%s, degrees=%s" % (gmst_radians, gmst_radians * 180.0/3.1415927))
+        (x, y, z) = (table[i][1][0], table[i][1][1], table[i][1][2])
+        r = math.sqrt(x*x + y*y)
+        theta = math.atan2(y, x)
+        x = r*math.cos(-1.0*gmst_radians+theta)
+        y = r*math.sin(-1.0*gmst_radians+theta)
+        string = "% 013.0f% 013.0f% 013.0f" % (x*1000.0, y*1000.0, z*1000.0)
+        csum = checksum(string)
+        print("%s%3.3d\r\r\n" % (string, csum))
+        (x, y, z) = (table[i][2][0], table[i][2][1], table[i][2][2])
+        r = math.sqrt(x*x + y*y)
+        theta = math.atan2(y, x)
+        x = r*math.cos(-1.0*gmst_radians+theta)
+        y = r*math.sin(-1.0*gmst_radians+theta)
+        string = "% 013.0f% 013.0f% 013.0f" % (x*1000000.0, y*1000000.0, z*1000000.0)
+        csum = checksum(string)
+        print("%s%3.3d\r\r\n" % (string, csum))
+        mass = 4475570
+        cross = 99999
+        drag = 207
+        solar = 0
+        string = "%08.0f%05.0f%04.0f% 08.0f" % (mass, cross, drag, solar)
+        csum = checksum(string)
+        print("%s%3.3d\r\r\n" % (string, csum))
+        print("ITERM GAQD\r\r\n")
+        
+
 
 # Python idiom to eliminate the need for forward declarations
 if __name__=="__main__":
