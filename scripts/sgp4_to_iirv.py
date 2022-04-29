@@ -2,9 +2,13 @@
 
 import argparse
 from argvalidator import ArgValidator
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
+from fileinput import input
+import pandas as pd
+import math
 from sgp4.api import Satrec
+from pyorbital.orbital import astronomy
 
 ###############################################################################
 # Script to use the sgp4 module to compute IIRVs for a satellite number
@@ -65,6 +69,26 @@ class SatelliteTle:
                     (self.__satellite_number, self.__tle_url))
         else:
             self.__satellite = Satrec.twoline2rv(self.__line1, self.__line2)
+    
+    def compute_ephemeris_point(self, in_time):
+        """Method to compute an ephemeris point for a given time"""
+        time = pd.Timestamp(in_time).to_julian_date()
+        (e, pos, vel) = self.__satellite.sgp4(time, 0.0)
+        return (in_time, pos, vel)
+
+    def compute_ephemeris_table(self, in_start_time, in_end_time, time_step_seconds):
+        """Method to compute a table of ephemerides for a given time span at a given time step"""
+        time = in_start_time
+        try:
+            delta = timedelta(seconds=time_step_seconds)
+        except:
+            delta = timedelta(seconds=60)
+        ephem_tbl = []
+        while (time < in_end_time + delta):
+            ephem_tbl.append(self.compute_ephemeris_point(time))
+            time += delta
+
+        return ephem_tbl
 
 def main():
     """Main function... makes 'forward declarations' of helper functions unnecessary"""
@@ -86,7 +110,92 @@ def main():
         saturl = "http://www.celestrak.com/cgi-bin/TLE.pl?CATNR=%s" % args.satnum
         st = SatelliteTle(args.satnum, tle_url=saturl)
 
+    if (args.iirv):
+        if (args.endtime is None):
+            point = st.compute_ephemeris_point(args.time)
+            print_iirv_point(st, point)
+        else:
+            table = st.compute_ephemeris_table(args.time, args.endtime, args.timestep)
+            print_iirv_points(st, table)
 
+def print_iirv_point(st, point):
+    print("GIIRV MANY\r\r\n")
+    tt = point[0].timetuple()
+    string = "1211800001000%3.3d%2.2d%2.2d%2.2d%3.3d" % (tt.tm_yday, tt.tm_hour, tt.tm_min, tt.tm_sec, int(point[0].microsecond/1000.0))
+    csum = checksum(string)
+    print("%s%3.3d\r\r\n" % (string, csum))
+    gmst_radians = astronomy.gmst(point[0])
+    #print("gmst_radians=%s, degrees=%s" % (gmst_radians, gmst_radians * 180.0/3.1415927))
+    (x, y, z) = (point[1][0], point[1][1], point[1][2])
+    r = math.sqrt(x*x + y*y)
+    theta = math.atan2(y, x)
+    x = r*math.cos(-1.0*gmst_radians+theta)
+    y = r*math.sin(-1.0*gmst_radians+theta)
+    string = "% 013.0f% 013.0f% 013.0f" % (x*1000.0, y*1000.0, z*1000.0)
+    csum = checksum(string)
+    print("%s%3.3d\r\r\n" % (string, csum))
+    (x, y, z) = (point[2][0], point[2][1], point[2][2])
+    r = math.sqrt(x*x + y*y)
+    theta = math.atan2(y, x)
+    x = r*math.cos(-1.0*gmst_radians+theta)
+    y = r*math.sin(-1.0*gmst_radians+theta)
+    string = "% 013.0f% 013.0f% 013.0f" % (x*1000000.0, y*1000000.0, z*1000000.0)
+    csum = checksum(string)
+    print("%s%3.3d\r\r\n" % (string, csum))
+    mass = 4475570
+    cross = 99999
+    drag = 207
+    solar = 0
+    string = "%08.0f%05.0f%04.0f% 08.0f" % (mass, cross, drag, solar)
+    csum = checksum(string)
+    print("%s%3.3d\r\r\n" % (string, csum))
+    print("ITERM GAQD\r\r\n")
+
+def checksum(s):
+    csum = 0
+    for c in s:
+        if (c == ' '):
+            pass
+        elif (c == '-'):
+            csum = csum + 1
+        else:
+            csum = csum + int(c)
+    return csum
+
+def print_iirv_points(st, table):
+    for i in range(0, len(table)):
+        print("GIIRV MANY\r\r\n")
+        tt = table[i][0].timetuple()
+        string = "1111800001%3.3d%3.3d%2.2d%2.2d%2.2d%3.3d" % (i+1, tt.tm_yday, tt.tm_hour, tt.tm_min, tt.tm_sec, int(table[i][0].microsecond/1000.0))
+        csum = checksum(string)
+        print("%s%3.3d\r\r\n" % (string, csum))
+        gmst_radians = astronomy.gmst(table[i][0])
+        #print("gmst_radians=%s, degrees=%s" % (gmst_radians, gmst_radians * 180.0/3.1415927))
+        (x, y, z) = (table[i][1][0], table[i][1][1], table[i][1][2])
+        r = math.sqrt(x*x + y*y)
+        theta = math.atan2(y, x)
+        x = r*math.cos(-1.0*gmst_radians+theta)
+        y = r*math.sin(-1.0*gmst_radians+theta)
+        string = "% 013.0f% 013.0f% 013.0f" % (x*1000.0, y*1000.0, z*1000.0)
+        csum = checksum(string)
+        print("%s%3.3d\r\r\n" % (string, csum))
+        (x, y, z) = (table[i][2][0], table[i][2][1], table[i][2][2])
+        r = math.sqrt(x*x + y*y)
+        theta = math.atan2(y, x)
+        x = r*math.cos(-1.0*gmst_radians+theta)
+        y = r*math.sin(-1.0*gmst_radians+theta)
+        string = "% 013.0f% 013.0f% 013.0f" % (x*1000000.0, y*1000000.0, z*1000000.0)
+        csum = checksum(string)
+        print("%s%3.3d\r\r\n" % (string, csum))
+        mass = 4544100
+        cross = 99999
+        drag = 200
+        solar = 1500000
+        string = "%08.0f%05.0f%04.0f% 08.0f" % (mass, cross, drag, solar)
+        csum = checksum(string)
+        print("%s%3.3d\r\r\n" % (string, csum))
+        print("ITERM GAQD\r\r\n")
+        
 # Python idiom to eliminate the need for forward declarations
 if __name__=="__main__":
    main()
