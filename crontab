@@ -25,6 +25,7 @@
 01 00 * * * stamp=$(date --rfc-3339=date); /usr/lib/cgi-bin/scripts/retrieve_spacetrack_tles.sh /var/www/html/stf1/${stamp}/electrontles-${stamp}.tle user pwd 43849 43862
 02 00 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/stf1/${stamp}/electrontles-${stamp}.tle" "/var/www/html/stf1/stf1/electrontles.tle"
 03 00 * * * stamp=$(date --rfc-3339=date); /usr/lib/cgi-bin/scripts/generate_html_report.py /usr/lib/cgi-bin/config/stf1_html_report.config
+30 13 * * 5 stamp=$(date --rfc-3339=date); /usr/lib/cgi-bin/scripts/generate_html_report.py /usr/lib/cgi-bin/config/stf1_html_report.config
 08 00 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/stf1/${stamp}/${stamp}.html" "/var/www/html/stf1/stf1/stf1.html"
 08 00 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/stf1/${stamp}/aer-day0-gs0.html" "/var/www/html/stf1/stf1/aer-day0-gs0.html"
 08 00 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/stf1/${stamp}/aer-day0-gs1.html" "/var/www/html/stf1/stf1/aer-day0-gs1.html"
@@ -51,10 +52,8 @@
 01 02 * * * stamp=$(date --rfc-3339=date); curl -s http://celestrak.com/NORAD/elements/stations.txt | grep 25544 > "/var/www/html/iss/${stamp}/${stamp}.tle"
 02 02 * * * stamp=$(date --rfc-3339=date); /usr/lib/cgi-bin/scripts/generate_html_report.py /usr/lib/cgi-bin/config/iss_html_report.config
 30 02 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/iss/${stamp}/${stamp}.html" "/var/www/html/iss/iss/iss.html"
-# Dellingr
-00 04 * * * stamp=$(date --rfc-3339=date); mkdir /var/www/html/dellingr/${stamp}
-01 04 * * * stamp=$(date --rfc-3339=date); curl -s http://celestrak.com/NORAD/elements/cubesat.txt | grep 43021 > "/var/www/html/dellingr/${stamp}/${stamp}.tle"
-02 04 * * * stamp=$(date --rfc-3339=date); /usr/lib/cgi-bin/scripts/generate_html_report.py /usr/lib/cgi-bin/config/dellingr_html_report.config
-30 04 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/dellingr/${stamp}/${stamp}.html" "/var/www/html/dellingr/dellingr/dellingr.html"
 # Bright satellites for the day for home tracking
 30 07 * * * /usr/lib/cgi-bin/scripts/visible_satellite.py > "/var/www/html/bright/bright.html"
+# Rsync/copy data from google drive to external drive nightly
+00 02 * * * /home/mark/mount_drive.sh
+02 02 * * * /usr/bin/rsync -av /home/mark/googledrive/.shared/STF1/ /media/external/STF1
