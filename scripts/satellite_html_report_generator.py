@@ -359,7 +359,7 @@ class SatelliteHtmlReportGenerator:
             riselocal = inviews[i][0].astimezone(self.__tz)
             setlocal = inviews[i][1].astimezone(self.__tz)
             self.__html_out.write(("          ['%s - %s Inviews', ' ', '%s', " + \
-                   "'%s %02d:%02d:%02d - %02d:%02d:%02d, Max Elev %02.1f degrees%s %s', " + \
+                   "'%s %02d:%02d:%02d - %02d:%02d:%02d, Max Elev %02.2f degrees%s %s', " + \
                    "new Date(%s, %s, %s, %s, %s, %s), " + \
                    "new Date(%s, %s, %s, %s, %s, %s)],\n") % \
                    (gsname, self.__satellite_tle.get_satellite_name(), color, typetext, \

@@ -8,19 +8,16 @@
 # Syntax:  received_telemetry_azelplot.py <file of times, format YYYY-MM-DD HH:MM:SS>
 #
 
-import argparse
 import json
-#import tempfile
+import tempfile
 from argvalidator import ArgValidator
 import os
-#import sys
+import sys
 import glob
-import re
 from configuration import Configuration
 from pyorbital.orbital import Orbital
 from satellite_tle import SatelliteTle
 from ground_station import GroundStation
-from inview_calculator import InviewCalculator
 from az_el_range_report import AzElRangeReportGenerator
 from datetime import datetime
 from pytz import timezone, UTC
@@ -30,194 +27,176 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def main():
-  parser = argparse.ArgumentParser()
-  parser.add_argument("-c", "--config", help="OIPP config file, used to get satellite number and ground station properties", type=ArgValidator.validate_file, default=None)
-  parser.add_argument("-t", "--tlmfile", help="File of telemetry", type=ArgValidator.validate_file, default=None)
-  parser.add_argument("-x", "--cmdfile", help="File of commands", type=ArgValidator.validate_file, default=None)
-  parser.add_argument("-p", "--pngfile", help="PNG filename to output", default="plot.png")
-  parser.add_argument("-d", "--directory", \
-      help="Directory of dated directories containing TLE files (*.tle), assumed format of dated directory is YYYY-MM-DD", \
-      type=ArgValidator.validate_directory, default="/home/itc/Desktop/oipp-data/stf1/")
-  args = parser.parse_args()
-
-  with open(args.config) as json_data_file:
+  conf_file = "config/sat_html_report.config"
+  if (len(sys.argv) > 1):
+      conf_file = sys.argv[1]
+  #sys.stderr.write("conf_file: %s\n" % conf_file)
+    
+  with open(conf_file) as json_data_file:
       data = json.load(json_data_file)
 
+  base_output_dir = Configuration.get_config_directory(data.get('base_output_directory',tempfile.gettempdir()))
   tz = Configuration.get_config_timezone(data.get('timezone','US/Eastern'))
+  start_day = Configuration.get_config_int(data.get('start_day','0'), -180, 180, 0)
+  end_day = Configuration.get_config_int(data.get('end_day','0'), -180, 180, 0)
+  time_step_seconds = Configuration.get_config_float(data.get('time_step_seconds','15'), 1, 600, 15)
+
+  #parser.add_argument("-f", "--file", help="File of times, format YYYY-MM-DD HH:MM:SS", type=ArgValidator.validate_file, default=None)
+  #parser.add_argument("-d", "--directory", \
+  #    help="Directory of dated directories containing TLE files (*.tle), assumed format of dated directory is YYYY-MM-DD", \
+  #    type=ArgValidator.validate_directory, default="/home/itc/Desktop/oipp-data/stf1/")
+  #parser.add_argument("-g", "--debug", help="Print debug information", action="store_true")
+  #parser.add_argument("-t", "--table", help="Print table of time, azimuth, elevation information", action="store_true")
+  #parser.add_argument("-m", "--summary", help="Print summary of days found and points per day", action="store_true")
 
   if (data['report_type'] == "AzElCmdTelem"):
-      create_azel_cmd_telemetry_report(tz, args.tlmfile, args.cmdfile, args.pngfile, data)
+      create_azel_cmd_telemetry_report(base_output_dir, tz, start_day, end_day, time_step_seconds, data)
 
-def create_azel_cmd_telemetry_report(tz, tlmfile, cmdfile, pngfile, data):
+def create_azel_cmd_telemetry_report(base_output_dir, tz, start_day, end_day, time_step_seconds, data):
   satnum = data.get('satellite',[])['number']
   ground_station = GroundStation.from_config(data.get('ground_station',[]))
+  tlm_file = data.get('tlm_file',"")
+
+  if (tlm_file is not None):
+    cwd = os.getcwd() + "/"
+    filename = cwd + tlm_file
+    pngname = filename + ".png"
+    process_file(filename, base_output_dir, pngname, tz, satnum, ground_station, data)
+
+def process_file(filename, eltdir, pngname, tzone, satnum, gs, data):
+
+  tle_dir = data.get('tle_dir', "")
+  lyear = lmonth = lday = 0
+  ax = generate_azelrange_plot()
   tle = SatelliteTle.from_config(data.get('satellite',[]))
-  show_track = Configuration.get_config_boolean(data.get('show_track','false'))
-
-  aer = AzElRangeReportGenerator("", ground_station, 1, tle, tz, 0, time_step_seconds = 15)
-  (fig, ax) = aer.create_polar_fig_and_ax()
+  aer = AzElRangeReportGenerator(eltdir, gs, 1, tle, tzone, 0, time_step_seconds = 15)
   aer.generate_azelrange_plot_groundconstraints(ax)
+  debug = Configuration.get_config_boolean(data.get('debug','false'))
+  summary = Configuration.get_config_boolean(data.get('summary','false'))
 
-  satdata = {}
-  tlmdata = {}
-  if (tlmfile is not None):
-    process_telem_file(tlmfile, tz, satnum, ground_station, data, satdata, tlmdata)
+  points = 0
+  azels = []
+  with open(filename, "r") as f:
+    i = 0
+    for line in f:
+      year = line[0:4]
+      month = line[5:7]
+      day = line[8:10]
+      hour = line[11:13]
+      minute = line[14:16]
+      second = line[17:19]
+      if (debug):
+        print("Line: %s contains year month day hour minute second: %s %s %s %s %s %s" % (line, year, month, day, hour, minute, second))
+      if ((lyear != year) or (lmonth != month) or (lday != day)):
+        date = "%s-%s-%s" % (lyear, lmonth, lday)
+        if (len(azels) > 0):
+          points = points + len(azels)
+          generate_azelrange_subplot(date, ax, azels, i, data)# as the number of days progresses... i grows... and the color becomes closer to white
+        azels = []
+        i = i + 1
 
-  hidata = {}
-  lowdata = {}
-  cleardata = {}
-  nre = {}
-  if (cmdfile is not None):
-    hidata = process_cmd_file(cmdfile, tz, satnum, ground_station, data, satdata,    re.compile("CADET_FIFO_REQUEST.*FLAGS [1H]"), True)
-    lowdata = process_cmd_file(cmdfile, tz, satnum, ground_station, data, satdata,   re.compile("CADET_FIFO_REQUEST.*FLAGS [^1H]"), True)
-    cleardata = process_cmd_file(cmdfile, tz, satnum, ground_station, data, satdata, re.compile("CADET_FIFO_CLEAR"), True)
-    nre = process_cmd_file(cmdfile, tz, satnum, ground_station, data, satdata,       re.compile("CADET_FIFO"), False)
+        elglob = tle_dir + "%s-%s-%s/*.tle" % (year, month, day)
+        elfile = glob.glob(elglob)
 
-  if (show_track):
-    for j in satdata.keys():
-      d = satdata[j]
-      for i in range(len(d.plotinviews)):
-        if (d.plotinviews[i]):
-          icazels = d.inview_computer.compute_azels(d.inviews[i][0], d.inviews[i][1], 15)
-          aer.generate_azelrange_plot_track(ax, "%s %s" % (tle.get_satellite_name(), j), icazels, 4) # Hardwire every 4
+        if (debug):
+          print("New date found:  %s-%s-%s.  From glob %s found TLE file:  %s." % (year, month, day, elglob, elfile[0]))
 
-  for i in tlmdata.keys():
-    aer.generate_azelrange_plot_points(ax, "Telemetry", "#00FF00", tlmdata[i])
-  for i in cleardata.keys():
-    aer.generate_azelrange_plot_points(ax, "Clear Data Cmd", "#FF0000", cleardata[i])
-  for i in hidata.keys():
-    aer.generate_azelrange_plot_points(ax, "High Data Request", "#0000FF", hidata[i])
-  for i in lowdata.keys():
-    aer.generate_azelrange_plot_points(ax, "Low Data Request", "#9900FF", lowdata[i])
-  for i in nre.keys():
-    aer.generate_azelrange_plot_points(ax, "NRE Cmd", "#FF6600", nre[i])
+        tle = SatelliteTle(satnum, tle_file=elfile[0])
+        if (debug):
+          print("TLE:")
+          print(tle)
+        orb = Orbital(str(tle.get_satellite_number()), \
+                          line1=tle.get_line1(), \
+                          line2=tle.get_line2())
 
-  ax.legend(loc=1, bbox_to_anchor=(1.12, 1.12))
+
+      instant = datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
+      temp = tzone.localize(instant).astimezone(UTC)
+      time = datetime(temp.year, temp.month, temp.day, temp.hour, temp.minute, temp.second)
+      (az, el) = orb.get_observer_look(time, gs.get_longitude(), gs.get_latitude(), gs.get_elevation_in_meters())
+      azels.append((time, az, el))
+      #print("%s%s, %s, %s-%s-%s %s:%s:%s, %d, %d" % (tle.get_epoch_year(), tle.get_epoch_day(), \
+      #    time, year, month, day, hour, minute, second, el, az))
+
+      lyear = year
+      lmonth = month
+      lday = day
+    date = "%s-%s-%s" % (lyear, lmonth, lday)
+    if (len(azels) > 0):
+      points = points + len(azels)
+      generate_azelrange_subplot(date, ax, azels, i, data)
+
+    if (summary):
+      print("There were %d points and %d days of telemetry represented." % (points, i))
+
   plt.figure(1)
-  plt.savefig(pngfile)
+  plt.savefig(pngname)
+  #plt.close(fig)
 
-def process_telem_file(filename, tzone, satnum, gs, data, satdata, telemdata):
-  tle_dir = data.get('tle_dir', "")
-  lyear = lmonth = lday = 0
+def generate_azelrange_plot():
+  # CAVEAT EMPTOR:  It was easier to work with the azimuth in radians (0 to 2pi) and the elevation in degrees (0 to 90)
 
-  timeline = re.compile("STF1_TLM,\w+,(\d{4})/(\d{2})/(\d{2}) (\d{2}):(\d{2}):(\d{2})(.*)")
-  azels = []
-  with open(filename, "r") as f:
-    for line in f:
-      match = timeline.match(line)
-      if match:
-        (year, month, day, hour, minute, second, text) = assign_group(match.group)
-        if ((lyear != year) or (lmonth != month) or (lday != day)):
-          date = "%s-%s-%s" % (lyear, lmonth, lday)
-          if (len(azels) > 0):
-            telemdata[date] = azels
-          azels = []
-          date = "%s-%s-%s" % (year, month, day)
-          (inviews, plotinviews, orb) = add_sat_data(satdata, tle_dir, date, year, month, day, tzone, satnum, gs) 
+  plt.rc('grid', color='#000000', linewidth=1, linestyle='-')
+  plt.rc('xtick', labelsize=10)
+  plt.rc('ytick', labelsize=10)
 
-        instant = datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
-        temp = tzone.localize(instant).astimezone(UTC)
-        time = datetime(temp.year, temp.month, temp.day, temp.hour, temp.minute, temp.second)
-        (az, el) = orb.get_observer_look(time, gs.get_longitude(), gs.get_latitude(), gs.get_elevation_in_meters())
-        azels.append((time, az, el))
-        set_plot_inviews(temp, inviews, plotinviews)
+  # force square figure and square axes looks better for polar, IMO
+  fig = plt.figure(figsize=(8, 8))
+  ax = fig.add_axes([0.1, 0.1, 0.8, 0.8],
+                    projection='polar')
 
-        lyear = year
-        lmonth = month
-        lday = day
+  ax.set_theta_zero_location("N")
+  ax.text(0, 103, "N", fontsize=10)
+  ax.text(np.pi/2, 107, "E", fontsize=10)
+  ax.text(np.pi, 105, "S", fontsize=10)
+  ax.text(3*np.pi/2, 105, "W", fontsize=10)
 
-    date = "%s-%s-%s" % (lyear, lmonth, lday)
-    if (len(azels) > 0):
-      telemdata[date] = azels
+  x = np.arange(0, 2*np.pi + 0.1, 0.1)
+  ax.fill_between(x, 90, 90, color='#ffff00', alpha=0.5) # Min el: 90 - angle, plt has 0 at bullseye
+  ax.fill_between(x, 0, 0, color='#ffff00', alpha=0.5)  # Keyhole: 90 - angle, plt has 0 at bullseye
 
-def process_cmd_file(filename, tzone, satnum, gs, data, satdata, cmdtofind, positivematch):
-  tle_dir = data.get('tle_dir', "")
-  lyear = lmonth = lday = 0
-  cmddata = {}
+  theta = np.arange(0, 2*np.pi + 0.1, 0.1)
+  r = theta*0 + 90
+  ax.plot(theta, r, color='#ff0000')
 
-  timeline = re.compile("(\d{4})/(\d{2})/(\d{2}) (\d{2}):(\d{2}):(\d{2})(.*)")
-  azels = []
-  with open(filename, "r") as f:
-    for line in f:
-      match = timeline.match(line)
-      if match:
-        (year, month, day, hour, minute, second, text) = assign_group(match.group)
-        if ((lyear != year) or (lmonth != month) or (lday != day)):
-          date = "%s-%s-%s" % (lyear, lmonth, lday)
-          if (len(azels) > 0):
-            cmddata[date] = azels
-          azels = []
-          date = "%s-%s-%s" % (year, month, day)
-          (inviews, plotinviews, orb) = add_sat_data(satdata, tle_dir, date, year, month, day, tzone, satnum, gs) 
+  labels = []
+  for angle in range(0, 105, 15):
+      labels.append(angle)
+  labels.reverse()
+  ticks = []
+  for label in labels:
+      ticks.append(90-label)
 
-        instant = datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
-        temp = tzone.localize(instant).astimezone(UTC)
-        time = datetime(temp.year, temp.month, temp.day, temp.hour, temp.minute, temp.second)
-        (az, el) = orb.get_observer_look(time, gs.get_longitude(), gs.get_latitude(), gs.get_elevation_in_meters())
-        if (cmdtofind.search(text)): # found it
-          if (positivematch): # want a match
-            azels.append((time, az, el))
-        else: # did not find it
-          if (not positivematch): # do NOT want a match
-            azels.append((time, az, el))
-        set_plot_inviews(temp, inviews, plotinviews)
+  ax.set_yticks(ticks)
+  ax.set_yticklabels(map(str, labels))
+  ax.legend()
+  return ax
 
-        lyear = year
-        lmonth = month
-        lday = day
-
-    date = "%s-%s-%s" % (lyear, lmonth, lday)
-    if (len(azels) > 0):
-      cmddata[date] = azels
-
-  return cmddata
-
-class SatData:
-  def __init__(self):
-    self.inviews = []
-    self.plotinviews = []
-    self.inview_computer = None
-    self.orb = None
-
-def add_sat_data(satdata, tle_dir, date, year, month, day, tzone, satnum, gs): 
-  #print("adding sat on %s" % date)
-  if (date not in satdata):
-    elfile = glob.glob(tle_dir + "%s-%s-%s/*.tle" % (year, month, day))
-    tle = SatelliteTle(satnum, tle_file=elfile[0])
-    orb = Orbital(str(tle.get_satellite_number()), line1=tle.get_line1(), line2=tle.get_line2())
-    ic = InviewCalculator(gs, tle)
-    inviews = ic.compute_inviews(tzone.localize(datetime(int(year), int(month), int(day), 0, 0, 0)), \
-	tzone.localize(datetime(int(year), int(month), int(day), 23, 59, 59)))
-    plotinviews = []
-    for i in range(len(inviews)):
-      plotinviews.append(False)
-    p = SatData()
-    p.inviews = inviews
-    p.plotinviews = plotinviews
-    p.inview_computer = ic
-    p.orb = orb
-    satdata[date] = p
-  else:
-    p = satdata[date]
-
-  return (p.inviews, p.plotinviews, p.orb)
-
-def assign_group(group):
-  year = group(1)
-  month = group(2)
-  day = group(3)
-  hour = group(4)
-  minute = group(5)
-  second = group(6)
-  text = group(7)
-  return (year, month, day, hour, minute, second, text)
-
-def set_plot_inviews(time, inviews, plotinviews):
+def generate_azelrange_subplot(day, ax, azels, number, data):
+  space = 64
+  offset = 100
+  xarr = []
+  yarr = []
   i = 0
-  for iv in inviews:
-    if ((iv[0] <= time) and (iv[1] >= time)):
-      plotinviews[i] = True
-    i = i + 1
+  summary = Configuration.get_config_boolean(data.get('summary','false'))
+  table = Configuration.get_config_boolean(data.get('table','false'))
+
+  if (summary):
+    print("There are %d points on %s" % (len(azels), day))
+
+  for azel in azels:
+      if (table):
+        print("%s, %s, %s" % (azel[0], azel[1], azel[2]))
+      theta = azel[1]*np.pi/180.0
+      xarr.append(theta)
+      r = 90.0 - azel[2]
+      yarr.append(r)
+      i = i + 1
+  n = int(256*number/space) + offset
+  clr = '#%2.2x%2.2x%2.2x' % (0, n, 0)
+  #print(clr)
+  ax.scatter(xarr, yarr, color=clr, lw=1, label='STF-1')
+
 
 # Python idiom to eliminate the need for forward declarations
 if __name__=="__main__":

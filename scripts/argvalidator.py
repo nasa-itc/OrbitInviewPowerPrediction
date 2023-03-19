@@ -11,18 +11,7 @@ class ArgValidator:
     @staticmethod
     def validate_datetime(s):
         try:
-            if (s.find('.') == -1): # no decimal seconds
-                return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S") 
-            else: # contains decimal seconds
-                return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f") 
-        except ValueError:
-            msg = "Not a valid date/time: '{0}'.".format(s)
-            raise argparse.ArgumentTypeError(msg)
-
-    @staticmethod
-    def validate_date(s):
-        try:
-            return datetime.strptime(s, "%Y-%m-%d") 
+            return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S") 
         except ValueError:
             msg = "Not a valid date/time: '{0}'.".format(s)
             raise argparse.ArgumentTypeError(msg)

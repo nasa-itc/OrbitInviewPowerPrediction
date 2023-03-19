@@ -1,4 +1,5 @@
-import requests
+import sys
+from urllib import urlopen
 from fileinput import input
 from pyorbital.orbital import Orbital
 from pytz import UTC
@@ -35,7 +36,9 @@ class SatelliteTle:
         """Constructor:  satellite number according to NORAD"""
         self.__satellite_number = satellite_number
         self.__tle_url = tle_url
+        #sys.stderr.write("__tle_url: %s\n" % self.__tle_url)
         self.__tle_file = tle_file # Like "C:\Users\msuder\Desktop\STF1-TLE.txt"
+        #sys.stderr.write("__tle_file: %s\n" % self.__tle_file)
         self.__satellite_name = satellite_name
         self.__satellite_contact_name = satellite_contact_name
         self.__receive_frequency = rx_freq
@@ -54,6 +57,7 @@ class SatelliteTle:
         sat_url = sat_data.get('url', 'http://www.celestrak.com/NORAD/elements/cubesat.txt')
         sat_rx_freq = Configuration.get_config_float(sat_data.get('receive_frequency', None), 0, 9999, None)
         sat_tx_freq = Configuration.get_config_float(sat_data.get('transmit_frequency', None), 0, 9999, None)
+        #sys.stderr.write("sat_url: %s\n" % sat_url)
         return cls(sat_num, satellite_name=sat_name, satellite_contact_name=sat_contact_name, tle_url=sat_url, rx_freq=sat_rx_freq, tx_freq=sat_tx_freq)
     
     # Member functions
@@ -317,9 +321,9 @@ class SatelliteTle:
             lines = input(self.__tle_file)
         else:
             try:
-                lines = requests.get(self.__tle_url).text.splitlines() 
+                lines = urlopen(self.__tle_url)
             except:
-                default_file = "C:/Users/msuder/Desktop/cubesat.txt"
+                default_file = "C:\Users\msuder\Desktop\cubesat.txt"
                 lines = input(default_file)
 
         last_name = ""

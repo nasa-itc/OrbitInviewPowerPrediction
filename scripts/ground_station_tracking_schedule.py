@@ -18,22 +18,22 @@ class GroundStationTrackingSchedule:
         self.__worksheet = load_workbook(file_name).worksheets[0]
     
     # Alternative based on data in the spreadsheet
-    def get_week(self):
-        try:
-            d = parser.parse(self.__worksheet.cell(row=6, column=10).value).date() # H6
-        except:
-            d = date(1, 1, 1)
-        return d
+    #def get_week(self):
+    #    try:
+    #        d = parser.parse(self.__worksheet.cell(row=6, column=8).value).date() # H6
+    #    except:
+    #        d = date(1, 1, 1)
+    #    return d
 
     # Alternative based on filename
-    #def get_week(self):
-    #    #print(self.__file_name)
-    #    result = re.search("(\d+)_(\d+)_(\d+)", self.__file_name)
-    #    if (result is not None):
-    #        #print("%s %s %s" % (result.group(3), result.group(1), result.group(2)))
-    #        return date(int(result.group(3)), int(result.group(1)), int(result.group(2)))
-    #    else:
-    #        return date(1, 1, 1)
+    def get_week(self):
+        #print(self.__file_name)
+        result = re.search("(\d+)_(\d+)_(\d+)", self.__file_name)
+        if (result is not None):
+            #print("%s %s %s" % (result.group(3), result.group(1), result.group(2)))
+            return date(int(result.group(3)), int(result.group(1)), int(result.group(2)))
+        else:
+            return date(1, 1, 1)
     
     # Alternative based on data in the spreadsheet
     #def get_revision(self):
