@@ -48,7 +48,7 @@ def main():
     if (args.file is not None):
         st = SatelliteTle(args.satnum, tle_file=args.file)
     else:
-        saturl = "http://www.celestrak.com/cgi-bin/TLE.pl?CATNR=%s" % args.satnum
+        saturl = None
         st = SatelliteTle(args.satnum, tle_url=saturl)
 
     if (args.tle):

@@ -24,7 +24,7 @@ class SatelliteTleException(BaseException):
 class SatelliteTle:
     """Class to retrieve and use a two line element set for a given satellite """
     # Constructor
-    def __init__(self, satellite_number, satellite_name = None, satellite_contact_name = None, tle_url = "http://www.celestrak.com/NORAD/elements/cubesat.txt", tle_file = None):
+    def __init__(self, satellite_number, satellite_name = None, satellite_contact_name = None, tle_url = None, tle_file = None):
         """Constructor:  satellite number according to NORAD"""
         self.__satellite_number = satellite_number
         self.__tle_url = tle_url
@@ -107,7 +107,7 @@ def main():
     if (args.file is not None):
         st = SatelliteTle(args.satnum, tle_file=args.file)
     else:
-        saturl = "http://www.celestrak.com/cgi-bin/TLE.pl?CATNR=%s" % args.satnum
+        saturl = None
         st = SatelliteTle(args.satnum, tle_url=saturl)
 
     if (args.iirv):

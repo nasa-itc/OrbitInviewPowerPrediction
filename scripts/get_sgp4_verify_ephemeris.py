@@ -9,7 +9,7 @@ from pytz import timezone
 # a table of ephemeris points for verification against
 # "Revisiting Spacetrack Report #3: Rev 2", AIAA 2006-6753-Rev2,
 # Vallado, Crawford, Hujsak, Kelso.
-# Get sgp4-ver.tle from https://celestrak.com/software/vallado-sw.asp
+# Get sgp4-ver.tle from https://celestrak.org/software/vallado-sw.php
 ###############################################################################
 
 def main():

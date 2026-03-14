@@ -18,7 +18,7 @@ def main():
     groundstation_name = 'Wallops Antenna'
     groundstation_address = 'Radar Road, Temperanceville, VA  23442'
     satnum = 25544 # ISS = 25544
-    saturl="http://www.celestrak.com/NORAD/elements/stations.txt"
+    saturl="https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=TLE"
     gs_minimum_elevation_angle = 10.0
 
     # Alternate constants

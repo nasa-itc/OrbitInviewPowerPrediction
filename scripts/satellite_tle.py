@@ -18,8 +18,8 @@ from configuration import Configuration
 # Obviously uses lots of other libraries to do the heavy lifting.
 #
 # Here are some reference URLs:
-# http://www.celestrak.com/columns/v04n03/
-# http://www.celestrak.com/columns/v04n05/
+# https://www.celestrak.org/columns/v04n03/
+# https://www.celestrak.org/columns/v04n05/
 # https://docs.python.org/2/install/
 # http://stackoverflow.com/questions/15138614/how-can-i-read-the-contents-of-an-url-with-python
 # https://docs.python.org/2/library/datetime.html
@@ -34,7 +34,7 @@ class SatelliteTleException:
 class SatelliteTle:
     """Class to retrieve and use a two line element set for a given satellite """
     # Constructor
-    def __init__(self, satellite_number, satellite_name = None, satellite_contact_name = None, tle_url = "http://www.celestrak.com/NORAD/elements/cubesat.txt", tle_file = None, 
+    def __init__(self, satellite_number, satellite_name = None, satellite_contact_name = None, tle_url = None, tle_file = None, 
             rx_freq = None, tx_freq = None):
         """Constructor:  satellite number according to NORAD"""
         self.__satellite_number = satellite_number
@@ -57,7 +57,7 @@ class SatelliteTle:
         sat_num = Configuration.get_config_int(sat_data.get('number','1'), 0, 1000000, 0)
         sat_name = sat_data.get('name', None)
         sat_contact_name = sat_data.get('contact_name', None)
-        sat_url = sat_data.get('url', 'http://www.celestrak.com/NORAD/elements/cubesat.txt')
+        sat_url = sat_data.get('url', None)
         sat_rx_freq = Configuration.get_config_float(sat_data.get('receive_frequency', None), 0, 9999, None)
         sat_tx_freq = Configuration.get_config_float(sat_data.get('transmit_frequency', None), 0, 9999, None)
         #sys.stderr.write("sat_url: %s\n" % sat_url)
@@ -154,7 +154,7 @@ class SatelliteTle:
 
     def get_satellite_sun_state(self, in_time):
         """Method to determine if the satellite is in sun, penumbra, or umbra at the given time"""
-        # https://celestrak.com/columns/v03n01/
+        # https://www.celestrak.org/columns/v03n01/
         earth_sun = self.get_sun_vector(in_time)
         ephemeris = self.compute_ephemeris_point(in_time)
         earth_sat = ephemeris[1]

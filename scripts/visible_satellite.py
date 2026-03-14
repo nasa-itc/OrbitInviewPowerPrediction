@@ -38,9 +38,7 @@ SATS =[
 [17590,4.0],
 [19210,4.5],
 [21610,4.5],
-[23560,4.5],
 [23561,4.5],
-[25860,4.5],
 [27386,4.5],
 [27422,4.5],
 ]
@@ -72,7 +70,7 @@ def main():
 
 def determine_satellite_visibility(sat, gs, gs_tz, gs_start, gs_end, night):
     satnum = sat[0]
-    saturl = "http://www.celestrak.com/cgi-bin/TLE.pl?CATNR=%s" % satnum
+    saturl = None
     st = SatelliteTle(satnum, tle_url=saturl)
 
     [suntimes, pentimes, umtimes] = st.compute_sun_times(gs_start, gs_end)

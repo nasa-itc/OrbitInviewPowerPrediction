@@ -15,8 +15,8 @@ import numpy as np
 # Obviously uses lots of other libraries to do the heavy lifting.
 #
 # Here are some reference URLs:
-# http://www.celestrak.com/columns/v04n03/
-# http://www.celestrak.com/columns/v04n05/
+# https://www.celestrak.org/columns/v04n03/
+# https://www.celestrak.org/columns/v04n05/
 # https://docs.python.org/2/install/
 # https://docs.python.org/2/library/datetime.html
 # http://pytroll.org/
