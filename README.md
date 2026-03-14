@@ -50,7 +50,7 @@ Open your new config file.
 - Make sure the "report_type" is "Satellite HTML"
 - Alter the "timezone" (timezone for the report bars), "inviews" (True is generate them, False is do not generate them), "insun" (similar to "inviews"), "start_day" (0 means today, -1 means yesterday, 1 means tomorrow, 7 means seven days from now, etc.), "end_day" (similar to "start_day").
 - Alter the satellite information.
-  -- Change the satellite "number" to the NORAD Spacecraft Number of your favorite satellite to get info for a different satellite.  See http://celestrak.com/ for information on NORAD Spacecraft Numbers, Two Line Element Sets (TLEs), etc.
+  -- Change the satellite "number" to the NORAD Spacecraft Number of your favorite satellite to get info for a different satellite.  See https://www.celestrak.org/ for information on NORAD Spacecraft Numbers, Two Line Element Sets (TLEs), etc.
   -- The "number" listed must exist in the file at the "url" listed... Celestrak has other TLE files such as "cubesat.txt", "tle_new.txt", and "stations.txt".
   -- List a "name" if you like... if none is specified, the program will attempt to retrieve the name from the TLE file.
 - Alter the ground stations list.  You can add or take out {}, blocks as desired to add or remove ground stations from the list.
@@ -75,7 +75,7 @@ More Description:
 Heavy Lifting::::
 Most of the heavy lifting (real calculations) in this script are done by packages that lots of great people have already put together.
 
-In particular, Pyorbital is providing the SGP4 ephemeris propagation of TLE data for the requested satellite.  They are also providing much of the inview calculations.  Speaking of Two Line Element sets, they are automatically retrieved over the internet (if possible... there is a file input capability) from http://celestrak.com/.  That ensures that the most recent TLE available (on CelesTrak) is retrieved.
+In particular, Pyorbital is providing the SGP4 ephemeris propagation of TLE data for the requested satellite.  They are also providing much of the inview calculations.  Speaking of Two Line Element sets, they are automatically retrieved over the internet (if possible... there is a file input capability) from https://celestrak.org/.  That ensures that the most recent TLE available (on CelesTrak) is retrieved.
 
 Geocoder and Pytz are used to do some nifty things on the ground like figure out the latitude and longitude of a particular address, what time zone things are in, and how to convert between time zones.
 

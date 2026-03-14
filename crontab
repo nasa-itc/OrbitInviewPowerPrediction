@@ -40,7 +40,7 @@
 38 00 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/wallops/${stamp}/${stamp}.html" "/var/www/html/wallops/wallops/wallops.html"
 # NOAA weather satellites
 00 01 * * * stamp=$(date --rfc-3339=date); mkdir /var/www/html/noaa/${stamp}
-01 01 * * * stamp=$(date --rfc-3339=date); curl -s http://celestrak.com/NORAD/elements/weather.txt > "/var/www/html/noaa/${stamp}/${stamp}.tle"
+01 01 * * * stamp=$(date --rfc-3339=date); curl -s https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=TLE > "/var/www/html/noaa/${stamp}/${stamp}.tle"
 02 01 * * * stamp=$(date --rfc-3339=date); /usr/lib/cgi-bin/scripts/generate_html_report.py /usr/lib/cgi-bin/config/noaa_html_report.config
 30 01 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/noaa/${stamp}/${stamp}.html" "/var/www/html/noaa/noaa/noaa.html"
 # amateur satellites
@@ -49,7 +49,7 @@
 55 01 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/amsat/${stamp}/${stamp}.html" "/var/www/html/amsat/amsat/amsat.html"
 # ISS
 00 02 * * * stamp=$(date --rfc-3339=date); mkdir /var/www/html/iss/${stamp}
-01 02 * * * stamp=$(date --rfc-3339=date); curl -s http://celestrak.com/NORAD/elements/stations.txt | grep 25544 > "/var/www/html/iss/${stamp}/${stamp}.tle"
+01 02 * * * stamp=$(date --rfc-3339=date); curl -s https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=TLE | grep 25544 > "/var/www/html/iss/${stamp}/${stamp}.tle"
 02 02 * * * stamp=$(date --rfc-3339=date); /usr/lib/cgi-bin/scripts/generate_html_report.py /usr/lib/cgi-bin/config/iss_html_report.config
 30 02 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/iss/${stamp}/${stamp}.html" "/var/www/html/iss/iss/iss.html"
 # Bright satellites for the day for home tracking
