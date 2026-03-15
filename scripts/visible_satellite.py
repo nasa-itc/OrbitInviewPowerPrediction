@@ -11,40 +11,6 @@ from astropy.time import Time
 
 ###############################################################################
 
-# Brightness from www.n2yo.com
-SATS =[
-[25544,-0.5],
-[20580,3.0],
-[19120,3.5],
-[19650,3.5],
-[20625,3.5],
-[22220,3.5],
-[22285,3.5],
-[22566,3.5],
-[22803,3.5],
-[23088,3.5],
-[23343,3.5],
-[23405,3.5],
-[23705,3.5],
-[24298,3.5],
-[25400,3.5],
-[25407,3.5],
-[25861,3.5],
-[10967,3.5],
-[16182,3.5],
-[17590,3.5],
-[10967,4.0],
-[16182,4.0],
-[17590,4.0],
-[19210,4.5],
-[21610,4.5],
-[23561,4.5],
-[27386,4.5],
-[27422,4.5],
-]
-a = [
-]
-
 def main():
     """Main function... makes 'forward declarations' of helper functions unnecessary"""
     [gs, gs_observer, gs_tz, gs_start, gs_end] = init_groundstation()
@@ -59,19 +25,27 @@ def main():
     print_span(gs_tz, civil_night)
     print(", nautical night: ")
     print_span(gs_tz, nautical_night)
+
+    file_path = '/var/www/html/bright/bright.tle'
+    SATS =[]
+    with open(file_path, 'r') as file:
+        for line in file:
+            # Process each line here
+            if (line[0] == "1"):
+                SATS.append(line[2:7])
+
     visibilities = []
     for sat in SATS:
-        visibilities.extend(determine_satellite_visibility(sat, gs, gs_tz, gs_start, gs_end, civil_night))
+        visibilities.extend(determine_satellite_visibility(sat, gs, gs_tz, gs_start, gs_end, civil_night, file_path))
 
     visibilities.sort(key=lambda entry : entry[1][0])
     print_timespans(gs_tz, visibilities)
    
     print("</body></html>")
 
-def determine_satellite_visibility(sat, gs, gs_tz, gs_start, gs_end, night):
-    satnum = sat[0]
-    saturl = None
-    st = SatelliteTle(satnum, tle_url=saturl)
+def determine_satellite_visibility(sat, gs, gs_tz, gs_start, gs_end, night, file_path):
+    satnum = sat
+    st = SatelliteTle(satnum, tle_file=file_path)
 
     [suntimes, pentimes, umtimes] = st.compute_sun_times(gs_start, gs_end)
 
@@ -88,10 +62,11 @@ def determine_satellite_visibility(sat, gs, gs_tz, gs_start, gs_end, night):
                 if (i2 is not None):
                     #print_span(gs_tz, i2)
                     i2startmjd = Time(i2[0]).mjd
-                    href = "http://www.heavens-above.com/passdetails.aspx?lat=%f&lng=%f&loc=%s&alt=%f&tz=%s&satid=%d&mjd=%f" % \
-                        (gs.get_latitude(), gs.get_longitude(), gs.get_name(), gs.get_elevation_in_meters(), gs.get_tz().localize(datetime(i2[0].year, i2[0].month, i2[0].day)).tzname(), satnum, i2startmjd)
-                    intersections.append(["<a href=%s>%s (mag:%s) %s %s-%s%s</a>" % 
-                        (href, satnum, sat[1], 
+                    #      "https://heavens-above.com/passdetails.aspx?lat=39.504&lng=-80.2185&loc=109&alt=0&tz=EST&satid=25544&mjd=61115.0446627678&type=V"
+                    href = "https://heavens-above.com/passdetails.aspx?lat=%f&lng=%f&loc=%s&alt=%f&satid=%s&mjd=%f&type=V" % \
+                        (gs.get_latitude(), gs.get_longitude(), gs.get_name(), gs.get_elevation_in_meters(), satnum, i2startmjd)
+                    intersections.append(["<a href=%s>%s %s %s-%s%s</a>" % 
+                        (href, satnum, 
                          st.get_satellite_name(), st.get_launch_year(), st.get_launch_year_number(), st.get_launch_piece()),i2])
 
     #print_debug_times(gs_tz, satnum, night, suntimes, inviews)
