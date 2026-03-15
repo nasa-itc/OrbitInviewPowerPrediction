@@ -43,6 +43,7 @@
 #02 02 * * * stamp=$(date --rfc-3339=date); /usr/lib/cgi-bin/scripts/generate_html_report.py /usr/lib/cgi-bin/config/iss_html_report.config
 #30 02 * * * stamp=$(date --rfc-3339=date); ln -s -f "/var/www/html/iss/${stamp}/${stamp}.html" "/var/www/html/iss/iss/iss.html"
 # Bright satellites for the day for home tracking
+29 07 * * * stamp=$(date --rfc-3339=date); curl "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=TLE" -o "/var/www/html/bright/bright.tle"
 #30 07 * * * /usr/lib/cgi-bin/scripts/visible_satellite.py > "/var/www/html/bright/bright.html"
 # Rsync/copy data from google drive to external drive nightly
 00 02 * * * /home/mark/mount_drive.sh
